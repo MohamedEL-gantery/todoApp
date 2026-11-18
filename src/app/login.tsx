@@ -15,6 +15,7 @@ import { Button, Input, PasswordInput } from "@/components/ui";
 import { useLoginMutation } from "@/redux";
 import type { LoginRequest } from "@/types";
 import { captureCurrentLocation } from "@/utils/profileSetup";
+import { registerPushTokenWithBackend } from "@/utils/pushToken";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 import { saveAuthSession } from "@/utils/tokenStorage";
 
@@ -38,6 +39,8 @@ const Login = () => {
         user: result.user,
       });
 
+      await registerPushTokenWithBackend();
+
       try {
         await captureCurrentLocation();
       } catch (locationError) {
@@ -48,6 +51,7 @@ const Login = () => {
         title: "Welcome",
         message: "Take a profile photo to continue",
       });
+
       router.replace("/camera");
     } catch (error) {
       console.log("login error", error);
@@ -91,6 +95,7 @@ const Login = () => {
                   value={field.value}
                   onBlur={field.onBlur}
                   onChangeText={field.onChange}
+                  returnKeyType="next"
                 />
                 <ErrorField>{fieldState.error?.message}</ErrorField>
               </Feild>

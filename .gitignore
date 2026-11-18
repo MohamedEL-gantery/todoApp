@@ -43,5 +43,9 @@ example
 /android
 
 .env
-.vscode/
-.claude/
+/.vscode
+/.claude
+
+todomanagment-42c91-firebase-adminsdk-fbsvc-8bef1eda27.json
+google-services.json
+

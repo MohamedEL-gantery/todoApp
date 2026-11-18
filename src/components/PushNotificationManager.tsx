@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { router, type Href } from "expo-router";
+import { router } from "expo-router";
 import { useEffect, type PropsWithChildren } from "react";
 
 import {
@@ -14,7 +14,7 @@ function handleNotificationData(data: TaskNotificationData) {
   router.push({
     pathname: "/(tabs)/Task",
     params: data.status ? { status: data.status } : undefined,
-  } as Href);
+  });
 }
 
 const PushNotificationManager = ({ children }: PropsWithChildren) => {

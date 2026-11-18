@@ -10,6 +10,7 @@ import { store } from "@/store";
 import "@/utils/background";
 import { registerDueTasksBackgroundTask } from "@/utils/background";
 import "@/utils/notifications";
+import { registerPushTokenWithBackend } from "@/utils/pushToken";
 import { getAuthSession } from "@/utils/tokenStorage";
 
 function RootNavigator() {
@@ -24,6 +25,8 @@ function RootNavigator() {
           } catch (error) {
             console.log("background task register failed:", error);
           }
+
+          void registerPushTokenWithBackend();
           router.replace("/(tabs)/Home");
         } else {
           router.replace("/login");

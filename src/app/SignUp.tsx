@@ -31,7 +31,8 @@ const SignUp = () => {
 
   const [register, { isLoading }] = useRegisterMutation();
 
-  const onSubmit = async ({ passwordConfirm: _, ...data }: SignUpForm) => {
+  const onSubmit = async (data: SignUpForm) => {
+    console.log("data", data);
     try {
       await register(data).unwrap();
       showSuccessToast({
@@ -73,6 +74,7 @@ const SignUp = () => {
                   value={field.value}
                   onBlur={field.onBlur}
                   onChangeText={field.onChange}
+                  returnKeyType="next"
                 />
                 <ErrorField>{fieldState.error?.message}</ErrorField>
               </Feild>
@@ -94,6 +96,7 @@ const SignUp = () => {
                   value={field.value}
                   onBlur={field.onBlur}
                   onChangeText={field.onChange}
+                  returnKeyType="next"
                 />
                 <ErrorField>{fieldState.error?.message}</ErrorField>
               </Feild>
@@ -113,6 +116,7 @@ const SignUp = () => {
                   value={field.value}
                   onBlur={field.onBlur}
                   onChangeText={field.onChange}
+                  returnKeyType="next"
                 />
                 <ErrorField>{fieldState.error?.message}</ErrorField>
               </Feild>
@@ -136,6 +140,7 @@ const SignUp = () => {
                   value={field.value}
                   onBlur={field.onBlur}
                   onChangeText={field.onChange}
+                  returnKeyType="next"
                 />
                 <ErrorField>{fieldState.error?.message}</ErrorField>
               </Feild>

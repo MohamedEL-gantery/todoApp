@@ -10,6 +10,8 @@ import {
   getUserLocation,
 } from "@/utils/tokenStorage";
 
+import { unregisterPushTokenFromBackend } from "@/utils/pushToken";
+
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -45,6 +47,7 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
+      await unregisterPushTokenFromBackend();
       await clearAuthSession();
       setImageUri(null);
       setUserName("");

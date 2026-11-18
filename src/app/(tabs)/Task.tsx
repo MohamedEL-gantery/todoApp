@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -94,6 +94,11 @@ const Task = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const lastLoadedPage = useRef(0);
+  const limit = 10;
 
   useEffect(() => {
     if (typeof statusParam === "string" && statusParam) {
@@ -101,9 +106,14 @@ const Task = () => {
     }
   }, [statusParam]);
 
-  const { data, isLoading, refetch } = useGetTodosQuery(
-    statusFilter ? { status: statusFilter as TaskStatus } : undefined,
-  );
+  const queryArgs = {
+    page,
+    limit,
+    ...(statusFilter ? { status: statusFilter as TaskStatus } : {}),
+  };
+
+  const { data, isLoading, isFetching, isSuccess, refetch } =
+    useGetTodosQuery(queryArgs);
 
   const [createTodo, { isLoading: isCreating }] = useCreateTodoMutation();
   const [updateTodo, { isLoading: isUpdating }] = useUpdateTodoMutation();
@@ -112,6 +122,9 @@ const Task = () => {
   const { control, handleSubmit, reset } = useForm<TaskFormValues>({
     defaultValues,
   });
+
+  const hasMore = page < totalPages;
+  const isLoadingMore = isFetching && page > 1;
 
   useEffect(() => {
     if (editingTask) {
@@ -126,10 +139,56 @@ const Task = () => {
     }
   }, [editingTask, reset]);
 
+  useEffect(() => {
+    setPage(1);
+    setTodos([]);
+    setTotalPages(1);
+    lastLoadedPage.current = 0;
+  }, [statusFilter]);
+
+  useEffect(() => {
+    if (!isSuccess || isFetching || !data?.data) return;
+
+    // Ignore stale response from another page
+    if (typeof data.page === "number" && data.page !== page) return;
+    if (lastLoadedPage.current === page) return;
+
+    lastLoadedPage.current = page;
+    if (typeof data.totalPages === "number") {
+      setTotalPages(data.totalPages);
+    } else if (data.data.length < limit) {
+      setTotalPages(page);
+    } else {
+      setTotalPages(page + 1);
+    }
+
+    setTodos((prev) => {
+      if (page === 1) return data.data;
+
+      const existingIds = new Set(prev.map((todo) => todo._id));
+      const nextItems = data.data.filter((todo) => !existingIds.has(todo._id));
+      return [...prev, ...nextItems];
+    });
+  }, [data, page, isFetching, isSuccess, limit]);
+
+  const loadMore = () => {
+    if (isFetching || !hasMore || lastLoadedPage.current !== page) return;
+    setPage((p) => p + 1);
+  };
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    setPage(1);
+    lastLoadedPage.current = 0;
     try {
-      await refetch();
+      const result = await refetch();
+      if (result.data?.data) {
+        setTodos(result.data.data);
+        if (typeof result.data.totalPages === "number") {
+          setTotalPages(result.data.totalPages);
+        }
+        lastLoadedPage.current = 1;
+      }
     } finally {
       setRefreshing(false);
     }
@@ -205,7 +264,6 @@ const Task = () => {
     }
   };
 
-  const todos = data?.data ?? [];
   const showInitialLoader = isLoading && !data;
 
   return (
@@ -230,6 +288,16 @@ const Task = () => {
             styles.list,
             todos.length === 0 && styles.emptyList,
           ]}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <ActivityIndicator
+                color="#267138"
+                style={{ marginVertical: 12 }}
+              />
+            ) : undefined
+          }
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

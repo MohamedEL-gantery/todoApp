@@ -1,9 +1,15 @@
+import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
 export type TaskNotificationData = {
-  type: "task_created" | "task_updated" | "task_deleted" | "task_overdue";
+  type:
+    | "task_created"
+    | "task_updated"
+    | "task_deleted"
+    | "task_overdue"
+    | "task_reminder";
   taskId: string;
   status: string;
 };
@@ -17,6 +23,31 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+export async function getExpoPushToken(): Promise<string | null> {
+  if (!Device.isDevice) return null;
+
+  const granted = await setupNotifications();
+  if (!granted) return null;
+
+  try {
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      Constants.easConfig?.projectId;
+
+    if (!projectId) {
+      console.log("Missing EAS projectId");
+      return null;
+    }
+
+    const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
+    console.log("Expo Push Token:", data);
+    return data;
+  } catch (error) {
+    console.log("getExpoPushToken error:", error);
+    return null;
+  }
+}
 
 async function ensureAndroidChannel() {
   if (Platform.OS !== "android") return;
@@ -75,7 +106,8 @@ export async function sendLocalTaskNotification(input: {
       task_created: "New task",
       task_updated: "Task updated",
       task_deleted: "Task deleted",
-      task_overdue: "Task overdue",
+      task_overdue: "Task Overdue",
+      task_reminder: "Task Reminder",
     };
 
     const bodies = {
@@ -83,6 +115,7 @@ export async function sendLocalTaskNotification(input: {
       task_updated: `${input.title} is now ${input.status}`,
       task_deleted: `${input.title} was deleted`,
       task_overdue: `${input.title} due time finished`,
+      task_reminder: `${input.title} is due soon`,
     };
 
     // trigger: null avoids Expo Go channel manager crashes
